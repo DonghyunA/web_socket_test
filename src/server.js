@@ -14,8 +14,22 @@ app.get("/*", (req, res) => res.redirect("/"))
 const server = http.createServer(app);
 
 const wss = new WebSocket.Server({server});
-const do_connect = (socket) => {
-    console.log(socket);
-}
-wss.on("connection", do_connect)
+const sockets = [];
+wss.on("connection", (socket) => {
+    sockets.push(socket);
+    socket["nickname"] = "Anon"
+    console.log("connected to browser");
+    socket.on("message", (msg)=>{
+        const message = JSON.parse(msg);
+        switch(message.type){
+            case "new_message":
+                sockets.forEach((sock)=>sock.send(`${socket["nickname"]}: ${message.payload}`));
+                break;
+            case "nickname":
+                socket["nickname"] = message.payload;
+                break;
+        }
+    
+    });
+});
 server.listen(3000);
